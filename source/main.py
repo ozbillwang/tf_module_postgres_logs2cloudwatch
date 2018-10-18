@@ -3,6 +3,7 @@
 # DB_INSTANCE_IDENTIFIER
 # (optional) INITIAL_DAYS_TO_INGEST
 # (optional) LOG_GROUP
+# (optional) BUCKET_NAME
 
 from __future__ import print_function
 from botocore.client import ClientError
@@ -26,15 +27,14 @@ def download_s3_file(bucket_name, file_name):
     download s3 file, if bucket is not exist, create it first.
     """
 
+    bucket = s3.Bucket(bucket_name)
     try:
         s3.meta.client.head_bucket(Bucket=bucket_name)
     except ClientError:
-        s3.create_bucket(
-            Bucket=bucket_name,
-            CreateBucketConfiguration={'LocationConstraint': region})
+        bucket.create(CreateBucketConfiguration={'LocationConstraint': region})
 
     try:
-        s3.Bucket(bucket_name).download_file(file_name, file_name)
+        bucket.download_file(file_name, file_name)
     except ClientError:
         print("The log state file does not exist.")
 
@@ -43,6 +43,17 @@ def upload_s3_file(bucket_name, file_name):
     """
     upload file to s3
     """
+    bucket = s3.Bucket(bucket_name)
+    try:
+        s3.meta.client.head_bucket(Bucket=bucket_name)
+    except ClientError:
+        bucket.create(CreateBucketConfiguration={'LocationConstraint': region})
+
+    try:
+        with open(file_name, 'rb') as data:
+            bucket.upload_fileobj(data, file_name)
+    except ClientError:
+        print("The data can't be uploaded to s3.")
 
 
 def manage_log_group(log_group, log_stream):
@@ -87,7 +98,8 @@ def lambda_handler(event, context):
     """
 
     DEFAULT_INITIAL_DAYS_TO_INGEST = 1
-    DEFAULT_LOG_GROUP = "/aws/lambda/rds_logs"
+    DEFAULT_LOG_GROUP = "/aws/rds_logs"
+    DEFAULT_BUCKET_NAME = "{}-rds-logs-state".format(account_id)
 
     # Start from 1 day ago if it hasn't been run yet
     try:
@@ -109,14 +121,19 @@ def lambda_handler(event, context):
     except KeyError:
         sys.exit(1)
 
+    try:
+        os.environ['BUCKET_NAME']
+        BUCKET_NAME = os.environ['BUCKET_NAME']
+    except KeyError:
+        BUCKET_NAME = DEFAULT_BUCKET_NAME
+
     sequence_token = manage_log_group(LOG_GROUP, LOG_STREAM)
 
-    bucket_name = "{}_rds_logs_state".format(account_id)
-    file_name = "{}_rds_log_state".format(DB_INSTANCE_IDENTIFIER)
-    download_s3_file(bucket_name, file_name)
+    FILE_NAME = "{}_rds_log_state".format(DB_INSTANCE_IDENTIFIER)
+    download_s3_file(BUCKET_NAME, FILE_NAME)
 
     try:
-        f = open(file_name, 'r')
+        f = open(FILE_NAME, 'r')
         lastReadDate = int(f.readline())
         readState = f.readline()
         f.close()
@@ -180,10 +197,10 @@ def lambda_handler(event, context):
 
             readState[logFile['LogFileName']] = response['Marker']
 
-    f = open(file_name, 'w')
+    f = open(FILE_NAME, 'w')
     f.write(str(lastReadDate))
     f.write("\n")
     f.write(str(readState))
     f.close()
 
-    upload_s3_file(bucket_name, file_name)
+    upload_s3_file(BUCKET_NAME, FILE_NAME)
