@@ -4,6 +4,10 @@
 # (optional) INITIAL_DAYS_TO_INGEST
 # (optional) LOG_GROUP
 # (optional) BUCKET_NAME
+#
+# Notes:
+# Codes are format with yapf,
+# syntax and style check with flake8
 
 from __future__ import print_function
 from botocore.client import ClientError
