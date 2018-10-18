@@ -28,6 +28,8 @@ def download_s3_file(bucket_name, file_name):
     """
 
     bucket = s3.Bucket(bucket_name)
+    s3.BucketVersioning(bucket_name).enable()
+
     try:
         s3.meta.client.head_bucket(Bucket=bucket_name)
     except ClientError:

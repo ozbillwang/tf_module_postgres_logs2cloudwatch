@@ -3,7 +3,7 @@
 ### Steps
 
 * download state file from s3 bucket (<account_id>-rds-logs-state).
-* If the s3 bucket is not exist, create it first
+* If the s3 bucket is not exist, create it first, and enable versioning.
 * If the state file is not exist, ignore it.
 * check the state in state file and make sure only read new logs
 * push the latest logs to cloudwatch (default log group is /aws/rds_logs, log stream is the database identifier)
