@@ -10,7 +10,7 @@
 * adjust sequence token when push the logs to cloudwatch
 * write state to state file and upload to s3
 
-# System environment variables are required:
+### System environment variables are required:
 
 * DB_INSTANCE_IDENTIFIER
 * (optional) INITIAL_DAYS_TO_INGEST
