@@ -1,5 +1,9 @@
 # Run AWS Lambda function on local machine
 
+## Python version
+
+This lambda function is written by python 3, because it used some new features after v3.3
+
 ## Usage
 
 * install [python-lambda-local](https://github.com/HDE/python-lambda-local)
