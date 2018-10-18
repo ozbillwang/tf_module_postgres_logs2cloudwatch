@@ -8,6 +8,7 @@
 * check the state in state file and make sure only read new logs
 * push the latest logs to cloudwatch (default log group is /aws/rds_logs, log stream is the database identifier)
 * adjust sequence token when push the logs to cloudwatch
+* pick up the log's time as cloudwatch time
 * write state to state file and upload to s3
 
 ### System environment variables are required:
