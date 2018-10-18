@@ -7,11 +7,13 @@
 
 from __future__ import print_function
 from botocore.client import ClientError
+from dateutil import parser
 import sys
 import os
 import time
 import ast
 import boto3
+
 
 rds = boto3.client('rds')
 logs = boto3.client('logs')
@@ -177,22 +179,25 @@ def lambda_handler(event, context):
                 # LogFileData sends all entries as a single string.
                 # Split it up into a list to be able to append text to start
                 for entry in logLines:
-                    message = "[{}] {}".format(logFile['LogFileName'], entry)
+                    date = parser.parse(':'.join(entry.split(":")[:3]))
+                    timestamp = int(round(date.timestamp() * 1000))
+                    print(entry)
+                    print(date)
                     if sequence_token == "None":
                         event_response = logs.put_log_events(
                             logGroupName=LOG_GROUP,
                             logStreamName=LOG_STREAM,
                             logEvents=[{
-                                'timestamp': lastReadDate,
-                                'message': message
+                                'timestamp': timestamp,
+                                'message': entry
                             }])
                     else:
                         event_response = logs.put_log_events(
                             logGroupName=LOG_GROUP,
                             logStreamName=LOG_STREAM,
                             logEvents=[{
-                                'timestamp': lastReadDate,
-                                'message': message
+                                'timestamp': timestamp,
+                                'message': entry
                             }],
                             sequenceToken=str(sequence_token))
                     sequence_token = event_response['nextSequenceToken']
