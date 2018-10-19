@@ -15,10 +15,10 @@
 
 ```
 {
-  "lastReadDate": 1539921203656,
+  "lastReadDate": 1539922165072,
   "readState": {
-    "error/postgresql.log.2018-10-19-03": "4:3702",
-    "error/postgresql.log.2018-10-19-04": "7:3702"
+    "error/postgresql.log.2018-10-19-03": "4:4038",
+    "error/postgresql.log.2018-10-19-04": "5:672"
   }
 }
 ```
