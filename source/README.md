@@ -7,6 +7,7 @@
 * If log group (default is **rds_logs**) is not exist, create it
 * If log stream (default is DB identifier) is not exist, create it
 * If the state file is not exist, ignore it.
+* INITIAL_DAYS_TO_INGEST can be set with decimal point, for exmple, set to half day (0.5). With that, you can schedule this lambda funciton more than 1 time per day.
 * check the state in state file and make sure only read new logs
 * push the latest logs to cloudwatch (default log group is /aws/rds_logs, log stream is the database identifier)
 * adjust sequence token when push the logs to cloudwatch
