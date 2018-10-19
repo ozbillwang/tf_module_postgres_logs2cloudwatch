@@ -64,9 +64,9 @@ def upload_s3_file(bucket_name, file_name):
         print("The data can't be uploaded to s3.")
 
 
-def manage_log_group(log_group, log_stream):
+def manage_log_group(log_group):
     """
-    create log_group or log_stream if not exist
+    create log_group if not exist
     """
 
     response = logs.describe_log_groups(logGroupNamePrefix=log_group)
@@ -79,8 +79,22 @@ def manage_log_group(log_group, log_stream):
     if not sum:
         response = logs.create_log_group(logGroupName=log_group, )
 
+
+def describe_log_streams(log_group, log_stream):
+    """
+    describe log streams
+    """
+
     response = logs.describe_log_streams(
         logGroupName=log_group, logStreamNamePrefix=log_stream)
+
+    return response
+
+
+def manage_log_stream(log_group, log_stream, response):
+    """
+    create log_stream if not exist
+    """
 
     sum = 0
     for stream in response['logStreams']:
@@ -125,7 +139,6 @@ def lambda_handler(event, context):
     try:
         os.environ['DB_INSTANCE_IDENTIFIER']
         DB_INSTANCE_IDENTIFIER = os.environ['DB_INSTANCE_IDENTIFIER']
-        LOG_STREAM = DB_INSTANCE_IDENTIFIER
     except KeyError:
         sys.exit(1)
 
@@ -135,7 +148,8 @@ def lambda_handler(event, context):
     except KeyError:
         BUCKET_NAME = DEFAULT_BUCKET_NAME
 
-    sequence_token = manage_log_group(LOG_GROUP, LOG_STREAM)
+    manage_log_group(LOG_GROUP)
+    streams = describe_log_streams(LOG_GROUP, DB_INSTANCE_IDENTIFIER)
 
     FILE_NAME = "{}_rds_log_state".format(DB_INSTANCE_IDENTIFIER)
     download_s3_file(BUCKET_NAME, FILE_NAME)
@@ -176,6 +190,11 @@ def lambda_handler(event, context):
             readMarker = readState[logFile['LogFileName']]
         else:
             readMarker = '0'
+
+        LOG_STREAM = "{}/{}".format(DB_INSTANCE_IDENTIFIER,
+                                    logFile['LogFileName'])
+        sequence_token = manage_log_stream(LOG_GROUP, LOG_STREAM, streams)
+
         ext = ['xel', 'trc']  # Ignore binary data log files for MSSQL
         if not logFile['LogFileName'].endswith(tuple(ext)):
             # Also may need to fix this waiter
@@ -194,8 +213,6 @@ def lambda_handler(event, context):
                 for entry in logLines:
                     date = parser.parse(':'.join(entry.split(":")[:3]))
                     timestamp = int(round(date.timestamp() * 1000))
-                    print(entry)
-                    print(date)
                     if sequence_token == "None":
                         event_response = logs.put_log_events(
                             logGroupName=LOG_GROUP,
