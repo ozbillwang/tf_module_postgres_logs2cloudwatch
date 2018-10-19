@@ -25,6 +25,6 @@ pip install python-lambda-local
 ```
 export DB_INSTANCE_IDENTIFIER="postgresqldev"
 export INITIAL_DAYS_TO_INGEST=1
-export LOG_GROUP="/aws/rds_logs"
+export LOG_GROUP="rds_logs"
 python-lambda-local -l lib/ -f lambda_handler -t 300 ../source/main.py event.json
 ```

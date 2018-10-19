@@ -9,7 +9,17 @@
 * push the latest logs to cloudwatch (default log group is /aws/rds_logs, log stream is the database identifier)
 * adjust sequence token when push the logs to cloudwatch
 * pick up the log's time as cloudwatch time
-* write state to state file and upload to s3
+* write state (JSON) to state file and upload to s3
+
+```
+{
+  "lastReadDate": 1539921203656,
+  "readState": {
+    "error/postgresql.log.2018-10-19-03": "4:3702",
+    "error/postgresql.log.2018-10-19-04": "7:3702"
+  }
+}
+```
 
 ### System environment variables are required:
 

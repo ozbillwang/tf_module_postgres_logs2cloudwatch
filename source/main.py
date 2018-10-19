@@ -15,9 +15,8 @@ from dateutil import parser
 import sys
 import os
 import time
-import ast
 import boto3
-
+import json
 
 rds = boto3.client('rds')
 logs = boto3.client('logs')
@@ -107,7 +106,7 @@ def lambda_handler(event, context):
     """
 
     DEFAULT_INITIAL_DAYS_TO_INGEST = 1
-    DEFAULT_LOG_GROUP = "/aws/rds_logs"
+    DEFAULT_LOG_GROUP = "rds_logs"
     DEFAULT_BUCKET_NAME = "{}-rds-logs-state".format(account_id)
 
     # Start from 1 day ago if it hasn't been run yet
@@ -141,16 +140,25 @@ def lambda_handler(event, context):
     FILE_NAME = "{}_rds_log_state".format(DB_INSTANCE_IDENTIFIER)
     download_s3_file(BUCKET_NAME, FILE_NAME)
 
+    data = {}
+    lastReadDate = int(round(time.time() * 1000)) - int(
+        (1000 * 60 * 60 * 24) * float(INITIAL_DAYS_TO_INGEST))
+    readState = {}
+
     try:
-        f = open(FILE_NAME, 'r')
-        lastReadDate = int(f.readline())
-        readState = f.readline()
+        with open(FILE_NAME) as f:
+            data = json.load(f)
         f.close()
-        readState = ast.literal_eval(readState)
+        try:
+            lastReadDate = data['lastReadDate']
+        except KeyError:
+            pass
+        try:
+            readState = data['readState']
+        except KeyError:
+            pass
     except IOError:
-        lastReadDate = int(round(time.time() * 1000)) - (
-            (1000 * 60 * 60 * 24) * int(INITIAL_DAYS_TO_INGEST))
-        readState = {}
+        pass
 
     # Wait for the instance to be available
     #   -- need to possibly fix this or replace it with a custom waiter
@@ -209,10 +217,11 @@ def lambda_handler(event, context):
 
             readState[logFile['LogFileName']] = response['Marker']
 
-    f = open(FILE_NAME, 'w')
-    f.write(str(lastReadDate))
-    f.write("\n")
-    f.write(str(readState))
+    data['lastReadDate'] = lastReadDate
+    data['readState'] = readState
+
+    with open(FILE_NAME, 'w') as f:
+        json.dump(data, f)
     f.close()
 
     upload_s3_file(BUCKET_NAME, FILE_NAME)
