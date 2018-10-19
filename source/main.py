@@ -155,8 +155,8 @@ def lambda_handler(event, context):
     download_s3_file(BUCKET_NAME, FILE_NAME)
 
     data = {}
-    lastReadDate = int(round(time.time() * 1000)) - (
-        (1000 * 60 * 60 * 24) * INITIAL_DAYS_TO_INGEST)
+    lastReadDate = int(round(time.time() * 1000)) - int(
+        (1000 * 60 * 60 * 24) * float(INITIAL_DAYS_TO_INGEST))
     readState = {}
 
     try:
